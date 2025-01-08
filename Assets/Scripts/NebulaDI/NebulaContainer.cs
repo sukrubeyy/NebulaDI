@@ -6,10 +6,11 @@ using UnityEngine;
 public class NebulaContainer
 {
     private List<ServiceDescriptor> services;
-
-    public NebulaContainer(List<ServiceDescriptor> services)
+    GameObject containerTransform;
+    public NebulaContainer(List<ServiceDescriptor> services, GameObject _containerTransform)
     {
         this.services = services;
+        containerTransform = _containerTransform;
     }
 
     internal T GetService<T>()
@@ -19,13 +20,17 @@ public class NebulaContainer
         if (descriptor == null)
             Debug.Log($"Services of type {typeof(T).Name} is not registered");
 
-        // if (typeof(MonoBehaviour).IsAssignableFrom(typeof(T)))
-        // {
-        //     Debug.LogWarning($"MONOBEHAVIOUR CLASS VAR");
-        // }
-
         if (descriptor.Implementetion != null)
             return (T)descriptor.Implementetion;
+
+        if (typeof(MonoBehaviour).IsAssignableFrom(typeof(T)))
+        {
+            Debug.Log($"Creating MonoBehaviour instance for {typeof(T).Name}");
+            var component = containerTransform.AddComponent(typeof(T));
+            if (descriptor.LifeTime is ServiceLifeType.Singleton)
+                descriptor.Implementetion = component;
+            return (T)(object)component;
+        }
 
         var implementation = (T)Activator.CreateInstance(descriptor.ImplementationType ?? descriptor.ServiceType);
 
@@ -34,18 +39,5 @@ public class NebulaContainer
 
 
         return implementation;
-    }
-
-    private T CreateMonoBehaviourInstance<T>(ServiceDescriptor descriptor) where T : MonoBehaviour
-    {
-        var parentObject = descriptor.Implementetion as GameObject;
-
-        if (parentObject == null)
-        {
-            Debug.LogError("Parent GameObject is not provided for transient MonoBehaviour.");
-            return null;
-        }
-
-        return parentObject.AddComponent<T>();
     }
 }

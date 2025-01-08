@@ -4,9 +4,9 @@ using UnityEngine;
 public class NebulaServiceCollection
 {
     private readonly List<ServiceDescriptor> _services = new List<ServiceDescriptor>();
-    public NebulaContainer GenerateContainer()
+    public NebulaContainer GenerateContainer(GameObject containerObjTransform)
     {
-        var container = new NebulaContainer(_services);
+        var container = new NebulaContainer(_services, containerObjTransform);
         return container;
     }
 
@@ -18,12 +18,6 @@ public class NebulaServiceCollection
     public void RegisterSingleton<TService>(TService implementation)
     {
         _services.Add(new ServiceDescriptor(implementation, ServiceLifeType.Singleton));
-    }
-
-    internal void RegisterSingleton<TService>(GameObject gameObject) where TService : MonoBehaviour
-    {
-        var component = gameObject.AddComponent<TService>();
-        _services.Add(new ServiceDescriptor(component, ServiceLifeType.Singleton));
     }
     #endregion
 
@@ -38,16 +32,7 @@ public class NebulaServiceCollection
     {
         _services.Add(new ServiceDescriptor(typeof(TService), typeof(TImplementation), ServiceLifeType.Transient));
     }
-
-    internal void RegisterTransient<TService>(GameObject parent) where TService : MonoBehaviour
-    {
-        _services.Add(new ServiceDescriptor(typeof(TService), ServiceLifeType.Transient)
-        {
-            Implementetion = parent
-        });
-    }
     #endregion
-
 }
 
 public enum ServiceLifeType

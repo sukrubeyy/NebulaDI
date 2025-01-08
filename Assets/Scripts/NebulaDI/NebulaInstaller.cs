@@ -20,24 +20,28 @@ public class NebulaInstaller : MonoBehaviour
     }
     void Start()
     {
-        serviceCollection.RegisterTransient<GameManager>(containerTransform);
+        serviceCollection.RegisterSingleton<GameManager>();
 
-        serviceCollection.RegisterTransient<ISomeThing, DoSomething>();
+        serviceCollection.RegisterSingleton<RandomGuidGenerater>();
+
         CheckReferanceExists();
-
         CreateContainer();
-
-        var p1 = Container.GetService<ISomeThing>();
-
         var manager1 = Container.GetService<GameManager>();
-        // var manager2 = Container.GetService<GameManager>();
+        var manager2 = Container.GetService<GameManager>();
         Debug.Log($"{manager1.userId}");
-        // Debug.Log($"{manager2.userId}");
+        Debug.Log($"{manager2.userId}");
+
+        Debug.Log($"--------------NONE MONOBEHAVIOUR--------------");
+
+        var uid1 = Container.GetService<RandomGuidGenerater>();
+        Debug.Log($"{uid1.RandomGuid}");
+        var uid2 = Container.GetService<RandomGuidGenerater>();
+        Debug.Log($"{uid2.RandomGuid}");
     }
 
     void CreateContainer()
     {
-        Container = serviceCollection.GenerateContainer();
+        Container = serviceCollection.GenerateContainer(containerTransform);
     }
 
     void CheckReferanceExists()
