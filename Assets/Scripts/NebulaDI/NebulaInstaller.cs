@@ -1,5 +1,9 @@
+using System;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
+[DefaultExecutionOrder(-1000)]
 public class NebulaInstaller : MonoBehaviour
 {
     NebulaServiceCollection serviceCollection = new NebulaServiceCollection();
@@ -20,23 +24,17 @@ public class NebulaInstaller : MonoBehaviour
     }
     void Start()
     {
-        serviceCollection.RegisterSingleton<GameManager>();
-
         serviceCollection.RegisterSingleton<RandomGuidGenerater>();
-
         CheckReferanceExists();
         CreateContainer();
-        var manager1 = Container.GetService<GameManager>();
-        var manager2 = Container.GetService<GameManager>();
-        Debug.Log($"{manager1.userId}");
-        Debug.Log($"{manager2.userId}");
 
-        Debug.Log($"--------------NONE MONOBEHAVIOUR--------------");
+        // var s1 = Container.GetService<RandomGuidGenerater>();
+        // var s2 = Container.GetService<RandomGuidGenerater>();
+        // Debug.Log($"{s1.RandomGuid}");
+        // Debug.Log($"{s2.RandomGuid}");
 
-        var uid1 = Container.GetService<RandomGuidGenerater>();
-        Debug.Log($"{uid1.RandomGuid}");
-        var uid2 = Container.GetService<RandomGuidGenerater>();
-        Debug.Log($"{uid2.RandomGuid}");
+
+        FindInjectAttributesInAssembly();
     }
 
     void CreateContainer()
@@ -54,4 +52,46 @@ public class NebulaInstaller : MonoBehaviour
         if (Container == null)
             CreateContainer();
     }
+
+    public void FindInjectAttributesInAssembly()
+    {
+        Assembly currentAssembly = Assembly.GetExecutingAssembly();
+
+        var types = currentAssembly.GetTypes();
+
+        foreach (var type in types)
+        {
+            var fieldsWithInject = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                .Where(field => Attribute.IsDefined(field, typeof(InjectAttribute)));
+
+            var propertiesWithInject = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                .Where(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)));
+
+            if (fieldsWithInject.Any() || propertiesWithInject.Any())
+            {
+                Debug.Log($"Type: {type.Name}");
+
+                var instance = FindObjectOfType(type) as MonoBehaviour ?? Activator.CreateInstance(type);
+
+                if (instance == null)
+                {
+                    Debug.LogWarning($"Type {type.Name} için uygun bir instance bulunamadı.");
+                    continue;
+                }
+
+                foreach (var field in fieldsWithInject)
+                {
+                    var dependency = Container.GetService(field.FieldType);
+                    field.SetValue(instance, dependency);
+                    Debug.Log($"  Field: {field.Name}, Type: {field.FieldType}");
+                }
+
+                foreach (var property in propertiesWithInject)
+                {
+                    Debug.Log($"  Property: {property.Name}, Type: {property.PropertyType}");
+                }
+            }
+        }
+    }
+
 }

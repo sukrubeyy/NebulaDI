@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 public class NebulaContainer
@@ -18,10 +19,12 @@ public class NebulaContainer
         var descriptor = services.SingleOrDefault(x => x.ServiceType == typeof(T));
 
         if (descriptor == null)
-            Debug.Log($"Services of type {typeof(T).Name} is not registered");
+            Debug.LogError($"Services of type {typeof(T).Name} is not registered");
 
         if (descriptor.Implementetion != null)
+        {
             return (T)descriptor.Implementetion;
+        }
 
         if (typeof(MonoBehaviour).IsAssignableFrom(typeof(T)))
         {
@@ -40,4 +43,33 @@ public class NebulaContainer
 
         return implementation;
     }
+
+
+    public object GetService(Type serviceType)
+    {
+        var descriptor = services.SingleOrDefault(x => x.ServiceType == serviceType);
+
+        if (descriptor == null)
+            throw new Exception($"Service of type {serviceType.Name} is not registered");
+
+        if (descriptor.Implementetion != null)
+            return descriptor.Implementetion;
+
+        if (typeof(MonoBehaviour).IsAssignableFrom(serviceType))
+        {
+            Debug.Log($"Creating MonoBehaviour instance for {serviceType.Name}");
+            var component = containerTransform.AddComponent(serviceType);
+            if (descriptor.LifeTime == ServiceLifeType.Singleton)
+                descriptor.Implementetion = component;
+            return component;
+        }
+
+        var implementation = Activator.CreateInstance(descriptor.ImplementationType ?? descriptor.ServiceType);
+
+        if (descriptor.LifeTime == ServiceLifeType.Singleton)
+            descriptor.Implementetion = implementation;
+
+        return implementation;
+    }
+
 }

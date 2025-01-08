@@ -1,9 +1,9 @@
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class PopUpManager : MonoBehaviour
 {
     [Inject]
-    public RandomGuidGenerater randomGuidGenerater;
+    private RandomGuidGenerater randomGuidGenerater;
 
     void Start()
     {
