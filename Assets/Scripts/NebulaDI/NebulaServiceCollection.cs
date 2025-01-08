@@ -11,11 +11,11 @@ public class NebulaServiceCollection
     }
 
     #region Singleton
-    internal void RegisterSingleton<TService>()
+    internal void AsSingleton<TService>()
     {
         _services.Add(new ServiceDescriptor(typeof(TService), ServiceLifeType.Singleton));
     }
-    public void RegisterSingleton<TService>(TService implementation)
+    public void AsSingleton<TService>(TService implementation)
     {
         _services.Add(new ServiceDescriptor(implementation, ServiceLifeType.Singleton));
     }
@@ -23,12 +23,12 @@ public class NebulaServiceCollection
 
     #region Transient
 
-    internal void RegisterTransient<TService>()
+    internal void AsTransient<TService>()
     {
         _services.Add(new ServiceDescriptor(typeof(TService), ServiceLifeType.Transient));
     }
 
-    internal void RegisterTransient<TService, TImplementation>()
+    internal void AsTransient<TService, TImplementation>()
     {
         _services.Add(new ServiceDescriptor(typeof(TService), typeof(TImplementation), ServiceLifeType.Transient));
     }

@@ -3,7 +3,7 @@ using UnityEngine;
 public class PopUpManager : MonoBehaviour
 {
     [Inject]
-    private RandomGuidGenerater randomGuidGenerater;
+    [SerializeField] private RandomGuidGenerater randomGuidGenerater;
 
     void Start()
     {

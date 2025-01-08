@@ -6,10 +6,11 @@ using UnityEngine;
 [DefaultExecutionOrder(-1000)]
 public class NebulaInstaller : MonoBehaviour
 {
-    NebulaServiceCollection serviceCollection = new NebulaServiceCollection();
+    protected NebulaServiceCollection Servises = new NebulaServiceCollection();
     NebulaContainer Container;
     public GameObject containerTransform;
 
+    #region Editor
     void OnValidate()
     {
         if (transform.Find("Container") == null)
@@ -22,35 +23,30 @@ public class NebulaInstaller : MonoBehaviour
 
         CheckReferanceExists();
     }
+    void CheckReferanceExists()
+    {
+        if (containerTransform == null)
+            containerTransform = transform.GetChild(0).gameObject;
+
+        if (Container == null)
+            CreateContainer();
+    }
+    #endregion
+
     void Start()
     {
-        serviceCollection.RegisterSingleton<RandomGuidGenerater>();
-        CheckReferanceExists();
         CreateContainer();
 
-        // var s1 = Container.GetService<RandomGuidGenerater>();
-        // var s2 = Container.GetService<RandomGuidGenerater>();
-        // Debug.Log($"{s1.RandomGuid}");
-        // Debug.Log($"{s2.RandomGuid}");
-
+        OverrideBindings();
 
         FindInjectAttributesInAssembly();
     }
 
+    public virtual void OverrideBindings() { }
+
     void CreateContainer()
     {
-        Container = serviceCollection.GenerateContainer(containerTransform);
-    }
-
-    void CheckReferanceExists()
-    {
-        if (containerTransform == null)
-        {
-            containerTransform = transform.GetChild(0).gameObject;
-        }
-
-        if (Container == null)
-            CreateContainer();
+        Container = Servises.GenerateContainer(containerTransform);
     }
 
     public void FindInjectAttributesInAssembly()
