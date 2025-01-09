@@ -125,12 +125,6 @@ public class NebulaInstaller : MonoBehaviour
 
 
                     constructor.Invoke(parameters);
-                    // var instance = typeof(MonoBehaviour).IsAssignableFrom(constructor.DeclaringType) ? FindObjectOfType(constructor.DeclaringType) : Activator.CreateInstance(constructor.DeclaringType);
-                    // var parameters = constructor.GetParameters()
-                    //                .Select(x => Container.GetService(x.ParameterType))
-                    //                .ToArray();
-                    // constructor.Invoke(instance, parameters);
-
                 }
             }
         }
