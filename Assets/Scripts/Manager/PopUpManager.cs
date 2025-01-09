@@ -1,12 +1,11 @@
 using UnityEngine;
 
-public class PopUpManager : MonoBehaviour
+public class PopUpManager
 {
-    [Inject]
-    [SerializeField] private RandomGuidGenerater randomGuidGenerater;
 
-    void Start()
+    [Inject]
+    public PopUpManager(RandomGuidGenerater _ra)
     {
-        Debug.Log(randomGuidGenerater.RandomGuid);
+        Debug.Log($"{_ra.RandomGuid}");
     }
 }

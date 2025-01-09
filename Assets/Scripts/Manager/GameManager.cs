@@ -3,10 +3,8 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     [Inject]
-    public RandomGuidGenerater randomGuidGenerater { get; set; }
-
-    void Start()
+    public void Initialize(RandomGuidGenerater randomGuidGenerater)
     {
-        Debug.Log(randomGuidGenerater.RandomGuid);
+        Debug.Log($"{randomGuidGenerater.RandomGuid}");
     }
 }

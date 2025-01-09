@@ -16,32 +16,7 @@ public class NebulaContainer
 
     internal T GetService<T>()
     {
-        var descriptor = services.SingleOrDefault(x => x.ServiceType == typeof(T));
-
-        if (descriptor == null)
-            Debug.LogError($"Services of type {typeof(T).Name} is not registered");
-
-        if (descriptor.Implementetion != null)
-        {
-            return (T)descriptor.Implementetion;
-        }
-
-        if (typeof(MonoBehaviour).IsAssignableFrom(typeof(T)))
-        {
-            Debug.Log($"Creating MonoBehaviour instance for {typeof(T).Name}");
-            var component = containerTransform.AddComponent(typeof(T));
-            if (descriptor.LifeTime is ServiceLifeType.Singleton)
-                descriptor.Implementetion = component;
-            return (T)(object)component;
-        }
-
-        var implementation = (T)Activator.CreateInstance(descriptor.ImplementationType ?? descriptor.ServiceType);
-
-        if (descriptor.LifeTime is ServiceLifeType.Singleton)
-            descriptor.Implementetion = implementation;
-
-
-        return implementation;
+        return (T)GetService(typeof(T));
     }
 
 

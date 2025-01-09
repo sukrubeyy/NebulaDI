@@ -7,7 +7,7 @@ using UnityEngine;
 public class NebulaInstaller : MonoBehaviour
 {
     protected NebulaServiceCollection Servises = new NebulaServiceCollection();
-    NebulaContainer Container;
+    protected NebulaContainer Container;
     public GameObject containerTransform;
 
     #region Editor
@@ -63,10 +63,10 @@ public class NebulaInstaller : MonoBehaviour
             var propertiesWithInject = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
                 .Where(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)));
 
+
             if (fieldsWithInject.Any() || propertiesWithInject.Any())
             {
                 Debug.Log($"Type: {type.Name}");
-
                 var instance = FindObjectOfType(type) as MonoBehaviour ?? Activator.CreateInstance(type);
 
                 if (instance == null)
@@ -87,6 +87,50 @@ public class NebulaInstaller : MonoBehaviour
                     var dependency = Container.GetService(property.PropertyType);
                     property.SetValue(instance, dependency);
                     Debug.Log($"  Property: {property.Name}, Type: {property.PropertyType}");
+                }
+            }
+
+
+
+            var methodsInject = type.GetMethods().Where(method => Attribute.IsDefined(method, typeof(InjectAttribute)));
+
+            if (methodsInject.Any())
+            {
+                foreach (var method in methodsInject)
+                {
+                    var instance = typeof(MonoBehaviour).IsAssignableFrom(method.DeclaringType) ? FindObjectOfType(method.DeclaringType) : Activator.CreateInstance(method.DeclaringType);
+
+                    var parameters = method.GetParameters()
+                                        .Select(x => Container.GetService(x.ParameterType))
+                                        .ToArray();
+                    method.Invoke(instance, parameters);
+                }
+            }
+
+
+
+            var contructorsInject = type.GetConstructors().Where(c => Attribute.IsDefined(c, typeof(InjectAttribute)));
+            if (contructorsInject.Any())
+            {
+                foreach (var constructor in contructorsInject)
+                {
+
+
+                    if (typeof(MonoBehaviour).IsAssignableFrom(constructor.DeclaringType))
+                        continue;
+
+                    var parameters = constructor.GetParameters()
+               .Select(p => Container.GetService(p.ParameterType))
+               .ToArray();
+
+
+                    constructor.Invoke(parameters);
+                    // var instance = typeof(MonoBehaviour).IsAssignableFrom(constructor.DeclaringType) ? FindObjectOfType(constructor.DeclaringType) : Activator.CreateInstance(constructor.DeclaringType);
+                    // var parameters = constructor.GetParameters()
+                    //                .Select(x => Container.GetService(x.ParameterType))
+                    //                .ToArray();
+                    // constructor.Invoke(instance, parameters);
+
                 }
             }
         }
