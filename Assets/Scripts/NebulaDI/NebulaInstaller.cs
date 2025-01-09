@@ -84,6 +84,8 @@ public class NebulaInstaller : MonoBehaviour
 
                 foreach (var property in propertiesWithInject)
                 {
+                    var dependency = Container.GetService(property.PropertyType);
+                    property.SetValue(instance, dependency);
                     Debug.Log($"  Property: {property.Name}, Type: {property.PropertyType}");
                 }
             }
