@@ -9,4 +9,9 @@ public class PopUpManager
     {
         Debug.Log($"{_ra.RandomGuid}");
     }
+
+    public PopUpManager()
+    {
+
+    }
 }

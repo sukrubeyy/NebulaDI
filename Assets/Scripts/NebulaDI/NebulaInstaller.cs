@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -9,6 +10,7 @@ public class NebulaInstaller : MonoBehaviour
     protected NebulaServiceCollection Servises = new NebulaServiceCollection();
     protected NebulaContainer Container;
     public GameObject containerTransform;
+    List<int> InjectedIds = new List<int>();
 
     #region Editor
     void OnValidate()
@@ -33,6 +35,14 @@ public class NebulaInstaller : MonoBehaviour
     }
     #endregion
 
+    private void OnEnable()
+    {
+
+    }
+    private void OnDisable()
+    {
+
+    }
     void Start()
     {
         CreateContainer();
@@ -57,6 +67,14 @@ public class NebulaInstaller : MonoBehaviour
 
         foreach (var type in types)
         {
+
+            if (IsInject(type.GetHashCode()))
+            {
+                Debug.Log($"{type.Name} Inject Edilmiş... ID:{type.GetHashCode()}");
+                continue;
+            }
+
+
             var fieldsWithInject = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
                 .Where(field => Attribute.IsDefined(field, typeof(InjectAttribute)));
 
@@ -67,7 +85,7 @@ public class NebulaInstaller : MonoBehaviour
             if (fieldsWithInject.Any() || propertiesWithInject.Any())
             {
                 Debug.Log($"Type: {type.Name}");
-                var instance = FindObjectOfType(type) as MonoBehaviour ?? Activator.CreateInstance(type);
+                var instance = typeof(MonoBehaviour).IsAssignableFrom(type) ? FindObjectOfType(type) : Activator.CreateInstance(type);
 
                 if (instance == null)
                 {
@@ -130,4 +148,13 @@ public class NebulaInstaller : MonoBehaviour
         }
     }
 
+    bool IsInject(int _hasCode)
+    {
+
+        if (InjectedIds.Contains(_hasCode))
+            return true;
+
+        InjectedIds.Add(_hasCode);
+        return false;
+    }
 }
