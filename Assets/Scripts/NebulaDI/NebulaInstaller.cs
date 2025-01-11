@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(-1000)]
 public class NebulaInstaller : MonoBehaviour
@@ -10,8 +12,7 @@ public class NebulaInstaller : MonoBehaviour
     protected NebulaServiceCollection Servises = new NebulaServiceCollection();
     protected NebulaContainer Container;
     public GameObject containerTransform;
-    List<int> InjectedIds = new List<int>();
-
+    HashSet<int> InjectedObjects = new HashSet<int>();
     #region Editor
     void OnValidate()
     {
@@ -37,19 +38,36 @@ public class NebulaInstaller : MonoBehaviour
 
     private void OnEnable()
     {
-
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
     private void OnDisable()
     {
-
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
+
+    private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
+    {
+        StartCoroutine(StartInject());
+    }
+
+    IEnumerator StartInject()
+    {
+        yield return null;
+        FindInjectAttributesInScene();
+    }
+
+
     void Start()
     {
         CreateContainer();
-
         OverrideBindings();
+        DontDestroyOnLoad(gameObject);
+    }
 
-        FindInjectAttributesInAssembly();
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 
     public virtual void OverrideBindings() { }
@@ -59,102 +77,131 @@ public class NebulaInstaller : MonoBehaviour
         Container = Servises.GenerateContainer(containerTransform);
     }
 
-    public void FindInjectAttributesInAssembly()
+    public static GameObject[] GetDontDestroyOnLoadObjects()
     {
-        Assembly currentAssembly = Assembly.GetExecutingAssembly();
-
-        var types = currentAssembly.GetTypes();
-
-        foreach (var type in types)
+        GameObject temp = null;
+        try
         {
+            temp = new GameObject();
+            DontDestroyOnLoad(temp);
+            Scene dontDestroyOnLoad = temp.scene;
+            DestroyImmediate(temp);
+            temp = null;
 
-            if (IsInject(type.GetHashCode()))
+            return dontDestroyOnLoad.GetRootGameObjects();
+        }
+        finally
+        {
+            if (temp != null)
+                DestroyImmediate(temp);
+        }
+    }
+
+    public void FindInjectAttributesInScene()
+    {
+        Debug.Log("Finding Inject Attributes in Scene...");
+
+        var rootObjects = SceneManager.GetActiveScene().GetRootGameObjects().ToList();
+
+        foreach (var item in GetDontDestroyOnLoadObjects())
+        {
+            rootObjects.Add(item);
+        }
+
+        foreach (var root in rootObjects)
+        {
+            // var components = root.GetComponentsInChildren<MonoBehaviour>(true);
+
+            var componentsWithInject = root.GetComponentsInChildren<MonoBehaviour>(true)
+            .Where(component => HasInjectAttribute(component))
+            .ToList();
+
+            foreach (var component in componentsWithInject)
             {
-                Debug.Log($"{type.Name} Inject Edilmiş... ID:{type.GetHashCode()}");
-                continue;
-            }
-
-
-            var fieldsWithInject = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                .Where(field => Attribute.IsDefined(field, typeof(InjectAttribute)));
-
-            var propertiesWithInject = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                .Where(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)));
-
-
-            if (fieldsWithInject.Any() || propertiesWithInject.Any())
-            {
-                Debug.Log($"Type: {type.Name}");
-                var instance = typeof(MonoBehaviour).IsAssignableFrom(type) ? FindObjectOfType(type) : Activator.CreateInstance(type);
-
-                if (instance == null)
+                if (IsInjected(component))
                 {
-                    Debug.LogWarning($"Type {type.Name} için uygun bir instance bulunamadı.");
+                    Debug.LogWarning($"This Object Injected... Name : {component.name} -- ID : {component.GetInstanceID()}");
                     continue;
                 }
+                var type = component.GetType();
+
+                var fieldsWithInject = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                    .Where(field => Attribute.IsDefined(field, typeof(InjectAttribute)));
 
                 foreach (var field in fieldsWithInject)
                 {
-                    var dependency = Container.GetService(field.FieldType);
-                    field.SetValue(instance, dependency);
-                    Debug.Log($"  Field: {field.Name}, Type: {field.FieldType}");
+                    var dependency = ResolveDependency(field.FieldType);
+                    field.SetValue(component, dependency);
                 }
+
+                var propertiesWithInject = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                    .Where(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)));
 
                 foreach (var property in propertiesWithInject)
                 {
-                    var dependency = Container.GetService(property.PropertyType);
-                    property.SetValue(instance, dependency);
-                    Debug.Log($"  Property: {property.Name}, Type: {property.PropertyType}");
+                    var dependency = ResolveDependency(property.PropertyType);
+                    property.SetValue(component, dependency);
                 }
-            }
 
+                var methodsInject = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                    .Where(method => Attribute.IsDefined(method, typeof(InjectAttribute)));
 
-
-            var methodsInject = type.GetMethods().Where(method => Attribute.IsDefined(method, typeof(InjectAttribute)));
-
-            if (methodsInject.Any())
-            {
                 foreach (var method in methodsInject)
                 {
-                    var instance = typeof(MonoBehaviour).IsAssignableFrom(method.DeclaringType) ? FindObjectOfType(method.DeclaringType) : Activator.CreateInstance(method.DeclaringType);
-
                     var parameters = method.GetParameters()
-                                        .Select(x => Container.GetService(x.ParameterType))
-                                        .ToArray();
-                    method.Invoke(instance, parameters);
-                }
-            }
+                        .Select(param => Container.GetService(param.ParameterType))
+                        .ToArray();
 
-
-
-            var contructorsInject = type.GetConstructors().Where(c => Attribute.IsDefined(c, typeof(InjectAttribute)));
-            if (contructorsInject.Any())
-            {
-                foreach (var constructor in contructorsInject)
-                {
-
-
-                    if (typeof(MonoBehaviour).IsAssignableFrom(constructor.DeclaringType))
-                        continue;
-
-                    var parameters = constructor.GetParameters()
-               .Select(p => Container.GetService(p.ParameterType))
-               .ToArray();
-
-
-                    constructor.Invoke(parameters);
+                    method.Invoke(component, parameters);
                 }
             }
         }
     }
 
-    bool IsInject(int _hasCode)
+    private object ResolveDependency(Type type)
     {
+        if (typeof(MonoBehaviour).IsAssignableFrom(type))
+        {
+            return Container.GetService(type);
+        }
 
-        if (InjectedIds.Contains(_hasCode))
+        var constructor = type.GetConstructors()
+            .OrderByDescending(c => c.GetParameters().Length)
+            .FirstOrDefault();
+
+        if (constructor != null)
+        {
+            var parameters = constructor.GetParameters()
+                .Select(param => Container.GetService(param.ParameterType))
+                .ToArray();
+
+            return constructor.Invoke(parameters);
+        }
+
+        return Container.GetService(type);
+    }
+
+
+    private bool HasInjectAttribute(MonoBehaviour component)
+    {
+        var type = component.GetType();
+        return type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                   .Any(field => Attribute.IsDefined(field, typeof(InjectAttribute)))
+               || type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                   .Any(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)))
+               || type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                   .Any(method => Attribute.IsDefined(method, typeof(InjectAttribute)));
+    }
+
+
+    bool IsInjected(MonoBehaviour monoBehaviour)
+    {
+        int instanceId = monoBehaviour.GetInstanceID();
+        if (InjectedObjects.Contains(instanceId))
             return true;
 
-        InjectedIds.Add(_hasCode);
+        InjectedObjects.Add(instanceId);
         return false;
     }
+
 }

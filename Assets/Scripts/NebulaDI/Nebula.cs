@@ -7,5 +7,6 @@ public class Nebula : NebulaInstaller
     public override void OverrideBindings()
     {
         Servises.AsSingleton<RandomGuidGenerater>();
+        Servises.AsTransient<PopUpManager>();
     }
 }
