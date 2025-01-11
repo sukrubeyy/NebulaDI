@@ -4,9 +4,9 @@ using UnityEngine;
 public class NebulaServiceCollection
 {
     private readonly List<ServiceDescriptor> _services = new List<ServiceDescriptor>();
-    public NebulaContainer GenerateContainer(GameObject containerObjTransform)
+    public NebulaContainer GenerateContainer()
     {
-        var container = new NebulaContainer(_services, containerObjTransform);
+        var container = new NebulaContainer(_services);
         return container;
     }
 

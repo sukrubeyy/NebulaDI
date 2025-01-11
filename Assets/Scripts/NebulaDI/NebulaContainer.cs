@@ -8,10 +8,9 @@ public class NebulaContainer
 {
     private List<ServiceDescriptor> services;
     GameObject containerTransform;
-    public NebulaContainer(List<ServiceDescriptor> services, GameObject _containerTransform)
+    public NebulaContainer(List<ServiceDescriptor> services)
     {
         this.services = services;
-        containerTransform = _containerTransform;
     }
 
     internal T GetService<T>()
