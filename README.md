@@ -15,6 +15,7 @@ Nebula is a Dependency Injection (DI) framework designed for Unity. It supports 
 1. Right-click in the Unity Hierarchy.
 2. Navigate to `Nebula` → `Create Nebula Installer` to set up the DI system.
 3. The DI system is created globally and persists across scene transitions, ensuring that you only need to set it up once.
+4. An editor window is included to visualize all injected classes and their dependencies. This tool helps developers debug and manage their DI setup efficiently. From Toolbar Nebula->Open Inject List Window
 
 ## Usage
 
@@ -146,10 +147,5 @@ public class Nebula : NebulaInstaller
 2. Any fields, properties, methods, or constructors annotated with the `[Inject]` attribute are resolved automatically.
 3. The DI system uses ObjectInstanceID to track injected objects, preventing duplicate injections across scene transitions.
 
-## Editor Tools
-
-An editor window is included to visualize all injected classes and their dependencies. This tool helps developers debug and manage their DI setup efficiently.
-
 ---
 
-Start using Nebula to simplify and streamline dependency management in your Unity projects!
