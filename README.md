@@ -24,7 +24,7 @@ Dependencies are registered within a class inheriting from `NebulaInstaller`. Be
 
 #### Register as Singleton
 
-'''
+```
 public class Nebula : NebulaInstaller
 {
     public override void OverrideBindings()
@@ -32,11 +32,11 @@ public class Nebula : NebulaInstaller
         Services.AsSingleton<RandomGuidGenerator>();
     }
 }
-'''
+```
 
 #### Register as Transient
 
-'''
+```
 public class Nebula : NebulaInstaller
 {
     public override void OverrideBindings()
@@ -44,13 +44,13 @@ public class Nebula : NebulaInstaller
         Services.AsTransient<RandomGuidGenerator>();
     }
 }
-'''
+```
 
 #### MonoBehaviour as a Service
 
 MonoBehaviour classes can also be registered as services by referencing them directly.
 
-'''
+```
 public class RandomGuidGenerator : MonoBehaviour
 {
     public Guid MyProperty { get; set; } = Guid.NewGuid();
@@ -64,13 +64,13 @@ public class Nebula : NebulaInstaller
         Services.AsTransient(guidGenerator);
     }
 }
-'''
+```
 
 ### Injecting Dependencies
 
 #### MonoBehaviour Example
 
-'''
+```
 public class GameManager : MonoBehaviour
 {
     [Inject]
@@ -82,11 +82,11 @@ public class GameManager : MonoBehaviour
     [Inject]
     public void Initialize(RandomGuidGenerator _randomGuidGenerator) { }
 }
-'''
+```
 
 #### Plain C# Class Example
 
-'''
+```
 public class GameManager
 {
     public GameManager()
@@ -96,7 +96,7 @@ public class GameManager
     [Inject]
     public GameManager(RandomGuidGenerator _randomGuidGenerator) { }
 }
-'''
+```
 
 > **Note:** Plain C# classes must define a parameterless constructor to avoid injection errors if no parameters are provided.
 
@@ -104,7 +104,7 @@ public class GameManager
 
 You can also inject interfaces and their implementations:
 
-'''
+```
 public interface ILogger
 {
     void Log(string msg);
@@ -138,7 +138,7 @@ public class Nebula : NebulaInstaller
         Services.AsTransient<ILogger, ConsoleLogger>();
     }
 }
-'''
+```
 
 ## How It Works
 
