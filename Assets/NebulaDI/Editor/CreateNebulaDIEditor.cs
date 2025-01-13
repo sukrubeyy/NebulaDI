@@ -8,5 +8,9 @@ public class CreateNebulaDIEditor : MonoBehaviour
         GameObject nebulaInstaller = new GameObject("Nebula Installer");
         nebulaInstaller.AddComponent<Nebula>();
         Selection.activeGameObject = nebulaInstaller;
+
+        GameObject Container = new GameObject("Nebula Container");
+        Container.transform.SetParent(nebulaInstaller.transform);
+
     }
 }

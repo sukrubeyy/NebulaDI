@@ -10,8 +10,5 @@ EditorBuildSettings:
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
     path: Assets/Scenes/t1.unity
-    guid: 77a7b11a429fbdf40893ec8ffabb2ec2
-  - enabled: 1
-    path: Assets/Scenes/t2.unity
-    guid: 8d4b3e95580f9514e8c727345451dd51
+    guid: 071b1e685ec6f8e41bd7d1065c46c1f6
   m_configObjects: {}

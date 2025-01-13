@@ -93,24 +93,89 @@ public class NebulaExtentions : MonoBehaviour
     private static object ResolveDependency(Type type, NebulaContainer Container)
     {
         if (typeof(MonoBehaviour).IsAssignableFrom(type))
-        {
             return Container.GetService(type);
+
+        if (typeof(ScriptableObject).IsAssignableFrom(type))
+        {
+            var service = Container.GetService(type);
+            InjectDependenciesInScriptableObject(service, Container);
+            return service;
         }
 
-        var constructor = type.GetConstructors()
-            .OrderByDescending(c => c.GetParameters().Length)
-            .FirstOrDefault();
+        var constructors = type.GetConstructors()
+            .Where(c => Attribute.IsDefined(c, typeof(InjectAttribute)));
 
-        if (constructor != null)
+        foreach (var constructor in constructors)
         {
-            var parameters = constructor.GetParameters()
-                .Select(param => Container.GetService(param.ParameterType))
-                .ToArray();
+            if (constructor != null)
+            {
+                var parameters = constructor.GetParameters()
+                    .Select(param => Container.GetService(param.ParameterType))
+                    .ToArray();
 
-            return constructor.Invoke(parameters);
+                constructor.Invoke(parameters);
+            }
         }
 
         return Container.GetService(type);
+    }
+
+    public static T LoadScriptableObject<T>() where T : ScriptableObject
+    {
+        var allComponents = Resources.LoadAll<ScriptableObject>("");
+
+        var components = allComponents.OfType<T>().ToArray();
+
+        if (components.Length == 0)
+        {
+            Debug.LogWarning($"{typeof(T).Name} not found in Resources.");
+            return null;
+        }
+
+        if (components.Length > 1)
+        {
+            Debug.LogWarning($"Multiple instances of {typeof(T).Name} found in Resources.");
+        }
+
+        return components.First();
+    }
+
+    private static void InjectDependenciesInScriptableObject(object scriptableObject, NebulaContainer container)
+    {
+        if (scriptableObject == null)
+            return;
+
+        var type = scriptableObject.GetType();
+
+        var fieldsWithInject = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+            .Where(field => Attribute.IsDefined(field, typeof(InjectAttribute)));
+
+        foreach (var field in fieldsWithInject)
+        {
+            var dependency = ResolveDependency(field.FieldType, container);
+            field.SetValue(scriptableObject, dependency);
+        }
+
+        var propertiesWithInject = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+            .Where(prop => Attribute.IsDefined(prop, typeof(InjectAttribute)));
+
+        foreach (var property in propertiesWithInject)
+        {
+            var dependency = ResolveDependency(property.PropertyType, container);
+            property.SetValue(scriptableObject, dependency);
+        }
+
+        var methodsInject = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+            .Where(method => Attribute.IsDefined(method, typeof(InjectAttribute)));
+
+        foreach (var method in methodsInject)
+        {
+            var parameters = method.GetParameters()
+                .Select(param => container.GetService(param.ParameterType))
+                .ToArray();
+
+            method.Invoke(scriptableObject, parameters);
+        }
     }
 
 

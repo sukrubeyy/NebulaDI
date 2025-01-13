@@ -1,12 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[DefaultExecutionOrder(-1000)]
 public class NebulaInstaller : MonoBehaviour
 {
     protected NebulaServiceCollection Servises = new NebulaServiceCollection();
@@ -26,28 +20,14 @@ public class NebulaInstaller : MonoBehaviour
 
     private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
     {
-        StartCoroutine(StartInject());
-    }
-
-    IEnumerator StartInject()
-    {
-        yield return null;
         NebulaExtentions.FindInjectAttributesInScene(Container);
-        //FindInjectAttributesInScene();
     }
 
-
-    void Start()
+    void Awake()
     {
         CreateContainer();
         OverrideBindings();
         DontDestroyOnLoad(gameObject);
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 
     public virtual void OverrideBindings()
@@ -56,9 +36,6 @@ public class NebulaInstaller : MonoBehaviour
 
     void CreateContainer()
     {
-        Container = Servises.GenerateContainer();
+        Container = Servises.GenerateContainer(transform.GetChild(0));
     }
-
-
-
 }
