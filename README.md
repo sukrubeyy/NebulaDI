@@ -10,6 +10,8 @@ Nebula is a Dependency Injection (DI) framework designed for Unity. It supports 
 - **Global DI System:** Automatically persists across scenes using `DontDestroyOnLoad`.
 - **Editor Tools:** Includes an editor window to inspect injected dependencies and their associated classes.
 
+> **Note:** Your ScriptableObjects must be under the Resources folder.
+
 ## Installation
 
 1. Right-click in the Unity Hierarchy.
